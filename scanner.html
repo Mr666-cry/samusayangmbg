@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pemindai Nutrisi Makanan 📸</title>
+    
+  <style>
+    /* Global & Body */
+    body {
+        font-family: 'Poppins', sans-serif; /* Font lebih modern */
+        margin: 0;
+        padding: 0;
+        background-color: #e8f5e9; /* Light mint background */
+        color: #212121;
+        text-align: center;
+    }
+    .container {
+        max-width: 650px; /* Lebar lebih besar */
+        margin: 40px auto;
+        background: #ffffff;
+        padding: 30px 40px;
+        border-radius: 20px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+        color: #388e3c; /* Darker green */
+        border-bottom: 2px solid #a5d6a7;
+        padding-bottom: 15px;
+        margin-bottom: 30px;
+        font-weight: 700;
+        font-size: 28px;
+    }
+
+    /* Input dan Button */
+    input[type="file"] {
+        display: none;
+    }
+    .file-upload-group {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+    .custom-button {
+        flex: 1;
+        border: 2px dashed #a5d6a7; /* Border dashed menarik */
+        background-color: #f1f8e9;
+        padding: 18px 10px;
+        cursor: pointer;
+        border-radius: 12px;
+        transition: all 0.3s;
+        color: #388e3c;
+        font-weight: 600;
+        text-align: center;
+    }
+    .custom-button:hover {
+        border-color: #388e3c;
+        background-color: #e8f5e9;
+    }
+    button#scanButton {
+        background-color: #4caf50;
+        color: white;
+        padding: 12px 25px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 17px;
+        font-weight: 600;
+        transition: background-color 0.3s, transform 0.1s;
+        box-shadow: 0 4px #388e3c;
+    }
+    button#scanButton:hover {
+        background-color: #43a047;
+    }
+    button#scanButton:active {
+        transform: translateY(2px);
+        box-shadow: 0 2px #388e3c;
+    }
+    button#scanButton:disabled {
+        background-color: #bdbdbd;
+        cursor: not-allowed;
+        box-shadow: none;
+    }
+    
+    /* Selector Rencana */
+    .plan-selector {
+        margin-bottom: 20px;
+        text-align: left;
+    }
+    .plan-selector label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #4caf50;
+    }
+    .plan-selector select {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid #c8e6c9;
+        font-size: 16px;
+        appearance: none; /* Hilangkan default arrow */
+        background-color: #f9f9f9;
+    }
+
+    /* Pratinjau & Loading */
+    #preview {
+        max-width: 100%;
+        max-height: 250px;
+        object-fit: contain;
+        margin-top: 15px;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        display: none;
+    }
+    #loading {
+        color: #4CAF50;
+        margin-top: 15px;
+        display: none;
+        font-weight: bold;
+    }
+    .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #4CAF50;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        animation: spin 1s linear infinite;
+        display: inline-block;
+        margin-right: 10px;
+        vertical-align: middle;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Hasil Analisis */
+    #results h2 {
+        color: #388e3c;
+        font-size: 22px;
+        margin-top: 25px;
+    }
+    .result-item {
+        padding: 10px 0;
+        border-bottom: 1px solid #e0e0e0;
+        display: flex;
+        justify-content: space-between;
+    }
+    .result-item strong {
+        font-weight: 600;
+        color: #424242;
+    }
+    #geminiSummary {
+        margin-top: 5px; 
+        font-size: 0.95em; 
+        color: #1b5e20; /* Darkest green for good readability */
+        line-height: 1.5;
+        text-align: justify;
+    }
+
+    /* === MODAL/ALERT KUSTOM === */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        display: none; /* Default tersembunyi */
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        backdrop-filter: blur(3px); /* Efek blur modern */
+    }
+    .modal-content {
+        background: #ffffff;
+        padding: 30px;
+        border-radius: 15px;
+        width: 90%;
+        max-width: 400px;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        animation: fadeIn 0.3s ease-out;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .modal-icon {
+        font-size: 40px;
+        display: block;
+        margin-bottom: 15px;
+    }
+    .modal-content h3 {
+        margin-top: 0;
+        font-size: 20px;
+        font-weight: 700;
+        color: #212121;
+    }
+    .modal-content p {
+        margin-bottom: 25px;
+        color: #616161;
+        line-height: 1.4;
+    }
+    .modal-button {
+        background-color: #4caf50;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    .modal-button:hover {
+        background-color: #43a047;
+    }
+    /* Warna Modal Berdasarkan Tipe */
+    .modal-success .modal-icon { color: #4caf50; }
+    .modal-warning .modal-icon { color: #ffb300; }
+    .modal-error .modal-icon { color: #e53935; }
+    .modal-info .modal-icon { color: #29b6f6; }
+</style>
+
+</head>
+<body>
+    <div class="container">
+        <h1>Pemindai Nutrisi Makanan 📸</h1>
+        
+        <div class="plan-selector">
+            <label for="goal-select">Pilih Rencana Kesehatan Anda:</label>
+            <select id="goal-select">
+                <option value="none">-- Pilih Tujuan Anda --</option>
+                <option value="diet">Diet Ketat (Mengurangi Kalori)</option>
+                <option value="weightloss">Menurunkan Berat Badan (Defisit Moderat)</option>
+                <option value="cheeks">Meniruskan Pipi (Mengurangi Retensi Air & Garam)</option>
+                <option value="healthy">Hidup Sehat (Keseimbangan Nutrisi)</option>
+            </select>
+        </div>
+
+        <div class="file-upload-group">
+            <label for="file-upload" class="custom-button">
+                Pilih Foto dari Galeri
+            </label>
+            <input id="file-upload" type="file" accept="image/*, .html" onchange="previewFile(event)"/>
+            
+            <label for="camera-capture" class="custom-button">
+                Ambil Foto
+            </label>
+            <input id="camera-capture" type="file" accept="image/*" capture="environment" onchange="previewFile(event)"/>
+        </div>
+
+        <img id="preview" src="" alt="Pratinjau Makanan">
+        
+        <div style="margin-top: 20px;">
+            <button onclick="scanFood()" id="scanButton" disabled>Scan sekarang</button>
+            <div id="loading">
+                <span class="spinner"></span>
+                Memproses gambar... Mohon tunggu.
+            </div>
+        </div>
+
+        <div id="results">
+            <h2>Hasil Analisis & Saran (Perkiraan):</h2>
+            <div class="result-item"><strong>Tujuan Anda:</strong> <span id="userGoal">--</span></div>
+            <div class="result-item"><strong>Porsi Saran:</strong> <span id="suggestedPortion">--</span></div>
+            <div class="result-item"><strong>Makanan Dikenali:</strong> <span id="identifiedFood">--</span></div>
+            <div class="result-item"><strong>Kalori:</strong> <span id="calories">-- kcal</span></div>
+            <div class="result-item"><strong>Tingkat Kesehatan:</strong> <span id="healthScore">-- / 5</span></div>
+            <div class="result-item"><strong>Karbohidrat:</strong> <span id="carbs">-- g</span></div>
+            <div class="result-item"><strong>Protein:</strong> <span id="protein">-- g</span></div>
+            <div class="result-item"><strong>Lemak:</strong> <span id="fat">-- g</span></div>
+            
+            <div style="margin-top: 20px; padding: 10px; background-color: #e8f5e9; border-radius: 8px;">
+                <strong>Ringkasan Saran:</strong>
+                <p id="geminiSummary" style="margin-top: 5px; font-size: 0.9em; color: #388e3c;">Silakan scan makanan setelah memilih tujuan Anda.</p>
+            </div>
+
+<div id="custom-alert-modal" class="modal-overlay" onclick="closeCustomAlert()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <span id="alert-icon" class="modal-icon"></span>
+        <h3 id="alert-title"></h3>
+        <p id="alert-message"></p>
+        <button onclick="closeCustomAlert()" class="modal-button">Oke, Paham</button>
+    </div>
+</div>
+
+            <p class="disclaimer" style="font-size: 0.8em; color: #999; margin-top: 20px;">
+                *Analisis ini adalah perkiraan oleh AI dan tidak menggantikan data nutrisi resmi.
+            </p>
+        </div>
+    </div>
+<script>
+    // 1. Ganti API Key Anda di sini
+    // ----------------------------------------------------
+    const GEMINI_API_KEY = "AIzaSyDjzR6Os7Vf9AR1VvPnN-Y556WrXUDqcM8"; 
+    // ----------------------------------------------------
+
+    // --- Inisialisasi dan Validasi Awal ---
+    if (GEMINI_API_KEY === "GANTI_DENGAN_API_KEY_ANDA_YANG_ASLI" || !GEMINI_API_KEY) {
+        console.error("FATAL ERROR: Harap ganti API Key placeholder dengan kunci API Gemini Anda yang asli.");
+        const scanButton = document.getElementById('scanButton');
+        if (scanButton) scanButton.disabled = true;
+    }
+
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+    
+    let uploadedFile = null;
+    const scanButton = document.getElementById('scanButton');
+    const loading = document.getElementById('loading');
+    const preview = document.getElementById('preview');
+    const goalSelect = document.getElementById('goal-select'); 
+
+    // Mapping Tujuan (Tetap sama)
+    const GOAL_MAP = {
+        'diet': 'Diet Ketat (fokus pada protein tinggi dan kalori rendah).',
+        'weightloss': 'Menurunkan Berat Badan (fokus pada defisit kalori moderat dan serat).',
+        'cheeks': 'Meniruskan Pipi (fokus pada pengurangan sodium/garam dan retensi air).',
+        'healthy': 'Hidup Sehat (fokus pada keseimbangan makronutrien dan makanan utuh).'
+    };
+
+    // --- FUNGSI NOTIFIKASI KUSTOM ---
+    function showCustomAlert(type, title, message) {
+        const modal = document.getElementById('custom-alert-modal');
+        const icon = document.getElementById('alert-icon');
+        
+        const modalContent = modal.querySelector('.modal-content');
+        // Reset kelas sebelum menambahkan yang baru
+        modalContent.className = 'modal-content'; 
+        modalContent.classList.add('modal-' + type);
+
+        let emoji = 'ℹ️'; 
+        if (type === 'error') emoji = '🚫';
+        else if (type === 'warning') emoji = '⚠️';
+        else if (type === 'success') emoji = '✅';
+
+        icon.textContent = emoji;
+        document.getElementById('alert-title').textContent = title;
+        document.getElementById('alert-message').textContent = message;
+        
+        modal.style.display = 'flex';
+    }
+
+    function closeCustomAlert() {
+        document.getElementById('custom-alert-modal').style.display = 'none';
+    }
+    // ------------------------------------
+
+    // Helper untuk mengkonversi File menjadi Base64 string (Tidak ada perubahan)
+    function fileToGenerativePart(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const resultData = reader.result;
+                if (!resultData) {
+                    return reject(new Error("FileReader tidak menghasilkan data URL."));
+                }
+                const base64Data = resultData.split(',')[1];
+                if (!base64Data) {
+                     return reject(new Error("Gagal mengurai Base64 dari Data URL."));
+                }
+                resolve({
+                    inlineData: { 
+                        data: base64Data,
+                        mimeType: file.type,
+                    },
+                });
+            };
+            reader.onerror = (error) => {
+                reject(new Error("Kesalahan saat membaca file: " + error.target.error.name));
+            };
+            if (file instanceof Blob) {
+                reader.readAsDataURL(file);
+            } else {
+                reject(new Error("Input bukan objek File/Blob yang valid."));
+            }
+        });
+    }
+
+    // Fungsi yang dipanggil ketika file dipilih atau foto diambil (Tidak ada perubahan)
+    function previewFile(event) {
+        const file = event.target.files && event.target.files[0];
+        
+        if (file) {
+            const MAX_SIZE_MB = 4; 
+            if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+                showCustomAlert('warning', 'File Terlalu Besar 🐘', `Ukuran file maksimal adalah ${MAX_SIZE_MB} MB. Silakan pilih foto yang lebih kecil agar dapat diproses AI.`);
+                uploadedFile = null;
+                preview.style.display = 'none';
+                scanButton.disabled = true;
+                resetResults();
+                return;
+            }
+
+            uploadedFile = file; 
+            preview.src = URL.createObjectURL(file);
+            preview.style.display = 'block';
+            scanButton.disabled = false;
+            resetResults();
+        } else {
+            uploadedFile = null;
+            preview.style.display = 'none';
+            scanButton.disabled = true;
+            resetResults();
+        }
+    }
+
+    // Fungsi resetResults (Tidak ada perubahan)
+    function resetResults(keepIdentifiedFood = false) {
+        if (!keepIdentifiedFood) {
+            document.getElementById('identifiedFood').textContent = '--';
+            document.getElementById('userGoal').textContent = '--';
+            document.getElementById('suggestedPortion').textContent = '--';
+            document.getElementById('geminiSummary').textContent = 'Silakan scan makanan setelah memilih tujuan Anda.';
+        }
+        document.getElementById('calories').textContent = '-- kcal';
+        document.getElementById('healthScore').textContent = '-- / 5';
+        document.getElementById('carbs').textContent = '-- g';
+        document.getElementById('protein').textContent = '-- g';
+        document.getElementById('fat').textContent = '-- g';
+    }
+
+    // --- Fungsi Utama Scan Makanan (Koreksi Duplikasi Kode di Sini) ---
+    async function scanFood() {
+        const selectedGoal = goalSelect.value;
+        if (selectedGoal === 'none') {
+            showCustomAlert('info', 'Pilih Tujuan Dulu! 🤔', 'Harap pilih Rencana Kesehatan Anda (Diet, Menurunkan BB, dll.) di dropdown sebelum menekan tombol Scan.');
+            return;
+        }
+
+        if (!uploadedFile) {
+            showCustomAlert('info', 'Foto Belum Ada! 📸', 'Anda harus memilih foto dari galeri atau mengambil foto makanan terlebih dahulu.');
+            return;
+        }
+        
+        if (GEMINI_API_KEY === "GANTI_DENGAN_API_KEY_ANDA_YANG_ASLI" || !GEMINI_API_KEY) {
+            showCustomAlert('error', 'Konfigurasi API Key Gagal 🔑', 'Harap ganti placeholder GEMINI_API_KEY dengan kunci API Anda yang asli.');
+            return;
+        }
+
+        loading.style.display = 'block';
+        scanButton.disabled = true;
+        resetResults();
+        
+        const dynamicPrompt = `
+          Anda adalah ahli gizi. Analisis gambar makanan ini. Identifikasi makanan, perkirakan porsi saat ini, dan hitung nilai gizi (Kalori, Karbohidrat, Protein, Lemak) untuk porsi tersebut.
+          
+          Tujuan kesehatan pengguna adalah: **${GOAL_MAP[selectedGoal]}**.
+
+          Berdasarkan tujuan tersebut, berikan:
+          1. Saran porsi yang optimal (misal: "Hanya 1/2 porsi dari yang terlihat" atau "Porsi ini sudah tepat").
+          2. Ringkasan saran spesifik tentang makanan ini dan apa yang sebaiknya dimakan (misal: "Bagus untuk diet tapi kurangi minyaknya" atau "Tingkatkan protein").
+
+          Tanggapi HANYA dalam format JSON yang spesifik. Jangan berikan teks lain sebelum atau sesudah JSON.
+
+          FORMAT JSON WAJIB:
+          {
+            "makanan_teridentifikasi": "Nama makanan yang dikenali",
+            "estimasi_porsi_saat_ini": "Contoh: Satu piring sedang",
+            "nutrisi_perkiraan": {
+              "kalori_kcal": 0,
+              "karbohidrat_g": 0,
+              "protein_g": 0,
+              "lemak_g": 0
+            },
+            "tingkat_kesehatan_skor": 0,
+            "porsi_saran_sesuai_tujuan": "Saran porsi yang optimal berdasarkan tujuan kesehatan pengguna.",
+            "ringkasan_saran_gemini": "Ringkasan saran kesehatan spesifik untuk makanan ini dan tujuan pengguna."
+            
+            kalo makanan tidak terdeteksi Jawab saja nama benda/sesuatu yang ada digambar, tanpa perlu masih tau kalo kamu Gemini/pake api key 
+          }
+        `;
+
+        try {
+            const imagePart = await fileToGenerativePart(uploadedFile);
+            
+            // KODE BARU YANG BENAR:
+            const requestBody = {
+                contents: [
+                    {
+                        parts: [
+                            imagePart,
+                            { text: dynamicPrompt } 
+                        ]
+                    }
+                ],
+                // Pindah properti 'config' menjadi 'generationConfig' 
+                // dan sejajar dengan 'contents'.
+                generationConfig: { 
+                    responseMimeType: "application/json",
+                }
+            };
+
+
+            // Melakukan panggilan ke Gemini API
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Gemini API Error: HTTP ${response.status} - ${errorText}`);
+            }
+
+            const data = await response.json();
+            
+            // Verifikasi respons dan ekstrak string JSON
+            if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts[0] || !data.candidates[0].content.parts[0].text) {
+                 throw new Error("Respons dari API tidak valid atau kosong.");
+            }
+
+            const jsonString = data.candidates[0].content.parts[0].text;
+            
+            // Mengurai string JSON dan memproses hasil
+            const result = JSON.parse(jsonString);
+
+            // Tampilkan data ke elemen UI
+            document.getElementById('identifiedFood').textContent = result.makanan_teridentifikasi || 'Tidak Teridentifikasi';
+            document.getElementById('userGoal').textContent = GOAL_MAP[selectedGoal];
+            document.getElementById('suggestedPortion').textContent = result.porsi_saran_sesuai_tujuan || 'Tidak ada saran porsi.';
+            document.getElementById('geminiSummary').textContent = result.ringkasan_saran_gemini || 'Tidak ada ringkasan saran.';
+
+            const nutrisi = result.nutrisi_perkiraan || {};
+            document.getElementById('calories').textContent = `${nutrisi.kalori_kcal || 0} kcal`;
+            document.getElementById('healthScore').textContent = `${result.tingkat_kesehatan_skor || 0} / 5`;
+            document.getElementById('carbs').textContent = `${nutrisi.karbohidrat_g || 0} g`;
+            document.getElementById('protein').textContent = `${nutrisi.protein_g || 0} g`;
+            document.getElementById('fat').textContent = `${nutrisi.lemak_g || 0} g`;
+
+            showCustomAlert('success', 'Analisis Berhasil! ✅', `Makanan ${result.makanan_teridentifikasi || ''} telah dianalisis. Lihat hasilnya di bawah.`);
+
+        } catch (error) {
+            console.error("Kesalahan saat memproses data atau API:", error);
+            resetResults(true); 
+            showCustomAlert('error', 'Analisis Gagal 🚫', `Terjadi kesalahan saat memproses data: ${error.message}. Pastikan API Key Anda benar dan gambar jelas.`);
+        } finally {
+            loading.style.display = 'none';
+            scanButton.disabled = false;
+        }
+    }
+
+    // --- Penyiapan Event Listeners ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Menggunakan id 'file-upload' dan 'camera-capture' sesuai HTML
+        const fileUploadInput = document.getElementById('file-upload');
+        const cameraCaptureInput = document.getElementById('camera-capture');
+
+        // Event listener untuk input file dan kamera (menggunakan previewFile dari event onchange di HTML)
+        if (fileUploadInput) {
+            fileUploadInput.addEventListener('change', previewFile);
+        }
+        if (cameraCaptureInput) {
+            cameraCaptureInput.addEventListener('change', previewFile);
+        }
+        
+        // Event listener untuk tombol Scan
+        if (scanButton) {
+            scanButton.addEventListener('click', scanFood);
+        }
+        
+        // Setup untuk menutup alert kustom
+        const modal = document.getElementById('custom-alert-modal');
+        if (modal) {
+             const closeAlertButton = modal.querySelector('.modal-button');
+             if (closeAlertButton) {
+                closeAlertButton.addEventListener('click', closeCustomAlert);
+             }
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('custom-alert-modal');
+            if (event.target == modal) {
+                closeCustomAlert();
+            }
+        }
+        
+        // Validasi awal API Key saat halaman dimuat
+        if (GEMINI_API_KEY === "GANTI_DENGAN_API_KEY_ANDA_YANG_ASLI" || !GEMINI_API_KEY) {
+            const scanButton = document.getElementById('scanButton');
+            if (scanButton) scanButton.disabled = true;
+            document.getElementById('geminiSummary').textContent = '⚠️ Harap ganti API Key Anda terlebih dahulu.';
+        }
+    });
+</script> 
+
+
+
+</body>
+</html>
